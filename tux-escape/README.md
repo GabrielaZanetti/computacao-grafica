@@ -9,8 +9,20 @@ O pinguim Tux precisa escapar de um antivírus ativando portas lógicas e montan
 Ensinar portas lógicas: AND, OR, NOT, XOR, NAND, NOR através de jogos interativos.
 
 ## Arquivos
-- `main.py`: Interface principal com menu e fases.
+- `main.py`: Menu, mapa hub (estilo top-down) e fases.
 - `logic_gates.py`: Classes para portas lógicas (AND, OR, NOT, etc.).
+
+## Fluxo do jogo
+1. Tela inicial
+2. Mapa hub com o pinguim (Tux)
+3. O jogador anda ate os portais das fases e aperta `E` para entrar
+4. Completa a fase e volta ao mapa
+
+## Controles
+- `WASD` ou setas: movimentar o Tux no mapa
+- `E`: entrar no portal da fase
+- `ESC`: sair da fase e voltar ao mapa
+- `ENTER`: confirmar conclusao da fase (quando a resposta estiver correta)
 
 ## Fases Implementadas
 1. Descobrindo entradas (0 e 1) - Botão A e lâmpada.
