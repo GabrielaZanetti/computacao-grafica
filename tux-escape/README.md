@@ -15,6 +15,7 @@ Ensinar portas lógicas: AND, OR, NOT, XOR, NAND, NOR através de jogos interati
 ## Fases Implementadas
 1. Descobrindo entradas (0 e 1) - Botão A e lâmpada.
 2. Porta AND - Botões A e B, porta AND visual, lâmpada conectada.
+3. Escolhendo a Porta - Seleção entre AND, OR e NOT para cumprir a regra da fase.
 
 ## Como executar
 1. Instalar Python e Pygame
