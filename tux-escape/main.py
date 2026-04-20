@@ -19,9 +19,15 @@ GREEN = (0, 255, 0)
 RED = (255, 0, 0)
 GRAY = (200, 200, 200)
 
+# Cores suaves para o menu
+DARK_BG = (20, 20, 20)
+WHITE_SOFT = (240, 240, 240)
+RED_SOFT = (220, 100, 100)
+
 # Fonte
 font = pygame.font.Font(None, 36)
 small_font = pygame.font.Font(None, 28)
+tiny_font = pygame.font.Font(None, 12)
 
 FPS = 60
 CLOCK = pygame.time.Clock()
@@ -164,6 +170,201 @@ def draw_portal(rect, label, unlocked):
     draw_text(label, small_font, WHITE, rect.x + 12, rect.y + 18)
 
 
+def phase_1_and():
+    running = True
+    button_a = Button(50, 250, 100, 50, "A")
+    button_b = Button(50, 320, 100, 50, "B")
+    gate_ui = GateUI(350, 250, 100, 100, AndGate())
+    lamp = Lamp(600, 275, 30)
+    tests_passed = []
+
+    while running:
+        screen.fill(WHITE)
+        draw_text("Fase 1 - Desafio 1: Porta AND (E)", small_font, BLACK, 220, 10)
+        draw_text("AND retorna 1 apenas se AMBAS as entradas forem 1", tiny_font, BLACK, 150, 40)
+        draw_text("Teste as combinacoes abaixo:", tiny_font, BLACK, 280, 55)
+        draw_text("1 AND 1 = 1", tiny_font, BLACK, 50, 75)
+        draw_text("1 AND 0 = 0", tiny_font, BLACK, 50, 90)
+        draw_text("0 AND 1 = 0", tiny_font, BLACK, 50, 105)
+        draw_text("0 AND 0 = 0", tiny_font, BLACK, 50, 120)
+
+        button_a.draw(screen)
+        button_b.draw(screen)
+        gate_ui.draw(screen)
+        lamp.draw(screen)
+
+        # Computar saída da porta AND
+        inputs = [bool(button_a.value), bool(button_b.value)]
+        output = gate_ui.gate.compute(inputs)
+        lamp.on = output
+
+        current_test = (button_a.value, button_b.value)
+        expected = button_a.value & button_b.value
+
+        if expected == (1 if lamp.on else 0):
+            status_text = "Correto! Continue testando outras combinacoes."
+            status_color = GREEN
+            if current_test not in tests_passed:
+                tests_passed.append(current_test)
+        else:
+            status_text = "Incorreto. Tente outra combinacao."
+            status_color = RED
+
+        draw_text(status_text, tiny_font, status_color, 280, 540)
+
+        if len(tests_passed) >= 4:
+            draw_text("Todos os testes passaram! Aperte ENTER para continuar.", tiny_font, GREEN, 220, 560)
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                return False
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                button_a.click(event.pos)
+                button_b.click(event.pos)
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    return False
+                if event.key == pygame.K_RETURN and len(tests_passed) >= 4:
+                    return True
+
+        pygame.display.flip()
+        CLOCK.tick(FPS)
+
+    return False
+
+
+def phase_1_or():
+    running = True
+    button_a = Button(50, 250, 100, 50, "A")
+    button_b = Button(50, 320, 100, 50, "B")
+    gate_ui = GateUI(350, 250, 100, 100, OrGate())
+    lamp = Lamp(600, 275, 30)
+    tests_passed = []
+
+    while running:
+        screen.fill(WHITE)
+        draw_text("Fase 1 - Desafio 2: Porta OR (OU)", small_font, BLACK, 230, 10)
+        draw_text("OR retorna 1 se PELO MENOS UMA entrada for 1", tiny_font, BLACK, 160, 40)
+        draw_text("Teste as combinacoes abaixo:", tiny_font, BLACK, 280, 55)
+        draw_text("1 OR 1 = 1", tiny_font, BLACK, 50, 75)
+        draw_text("1 OR 0 = 1", tiny_font, BLACK, 50, 90)
+        draw_text("0 OR 1 = 1", tiny_font, BLACK, 50, 105)
+        draw_text("0 OR 0 = 0", tiny_font, BLACK, 50, 120)
+
+        button_a.draw(screen)
+        button_b.draw(screen)
+        gate_ui.draw(screen)
+        lamp.draw(screen)
+
+        # Computar saída da porta OR
+        inputs = [bool(button_a.value), bool(button_b.value)]
+        output = gate_ui.gate.compute(inputs)
+        lamp.on = output
+
+        current_test = (button_a.value, button_b.value)
+        expected = button_a.value | button_b.value
+
+        if expected == (1 if lamp.on else 0):
+            status_text = "Correto! Continue testando outras combinacoes."
+            status_color = GREEN
+            if current_test not in tests_passed:
+                tests_passed.append(current_test)
+        else:
+            status_text = "Incorreto. Tente outra combinacao."
+            status_color = RED
+
+        draw_text(status_text, tiny_font, status_color, 280, 540)
+
+        if len(tests_passed) >= 4:
+            draw_text("Todos os testes passaram! Aperte ENTER para continuar.", tiny_font, GREEN, 220, 560)
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                return False
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                button_a.click(event.pos)
+                button_b.click(event.pos)
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    return False
+                if event.key == pygame.K_RETURN and len(tests_passed) >= 4:
+                    return True
+
+        pygame.display.flip()
+        CLOCK.tick(FPS)
+
+    return False
+
+
+def phase_1_not():
+    running = True
+    button_a = Button(50, 250, 100, 50, "A")
+    gate_ui = GateUI(350, 250, 100, 100, NotGate())
+    lamp = Lamp(600, 275, 30)
+    tests_passed = []
+
+    while running:
+        screen.fill(WHITE)
+        draw_text("Fase 1 - Desafio 3: Porta NOT (NAO)", small_font, BLACK, 250, 10)
+        draw_text("NOT inverte o valor: 1 vira 0, 0 vira 1", tiny_font, BLACK, 210, 40)
+        draw_text("Teste as combinacoes abaixo:", tiny_font, BLACK, 280, 55)
+        draw_text("NOT 1 = 0", tiny_font, BLACK, 50, 75)
+        draw_text("NOT 0 = 1", tiny_font, BLACK, 50, 90)
+
+        button_a.draw(screen)
+        gate_ui.draw(screen)
+        lamp.draw(screen)
+
+        # Computar saída da porta NOT
+        inputs = [bool(button_a.value)]
+        output = gate_ui.gate.compute(inputs)
+        lamp.on = output
+
+        current_test = button_a.value
+        expected = 1 - button_a.value
+
+        if expected == (1 if lamp.on else 0):
+            status_text = "Correto! Continue testando a outra combinacao."
+            status_color = GREEN
+            if current_test not in tests_passed:
+                tests_passed.append(current_test)
+        else:
+            status_text = "Incorreto. Tente outra entrada."
+            status_color = RED
+
+        draw_text(status_text, tiny_font, status_color, 280, 540)
+
+        if len(tests_passed) >= 2:
+            draw_text("Todos os testes passaram! Aperte ENTER para continuar.", tiny_font, GREEN, 220, 560)
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                return False
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                button_a.click(event.pos)
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    return False
+                if event.key == pygame.K_RETURN and len(tests_passed) >= 2:
+                    return True
+
+        pygame.display.flip()
+        CLOCK.tick(FPS)
+
+    return False
+
+
+def phase_1_sequence():
+    """Executa os 3 desafios da Fase 1 em sequência"""
+    if not phase_1_and():
+        return False
+    if not phase_1_or():
+        return False
+    if not phase_1_not():
+        return False
+    return True
+
+
 def phase_2_and():
     running = True
     button_a = Button(50, 250, 100, 50, "A")
@@ -275,22 +476,29 @@ def hub_world():
 
     portals = [
         {
-            "name": "Fase 2 - AND",
-            "rect": pygame.Rect(160, 200, 170, 60),
+            "name": "Fase 1 - Tutoria",
+            "rect": pygame.Rect(90, 200, 170, 60),
             "unlock": lambda progress: True,
+            "phase_fn": phase_1_sequence,
+            "progress_key": "phase_1_done",
+        },
+        {
+            "name": "Fase 2 - AND",
+            "rect": pygame.Rect(315, 200, 170, 60),
+            "unlock": lambda progress: progress["phase_1_done"],
             "phase_fn": phase_2_and,
             "progress_key": "phase_2_done",
         },
         {
             "name": "Fase 3 - Escolha",
-            "rect": pygame.Rect(470, 200, 170, 60),
+            "rect": pygame.Rect(540, 200, 170, 60),
             "unlock": lambda progress: progress["phase_2_done"],
             "phase_fn": phase_3_choose_gate,
             "progress_key": "phase_3_done",
         },
     ]
 
-    progress = {"phase_2_done": False, "phase_3_done": False}
+    progress = {"phase_1_done": False, "phase_2_done": False, "phase_3_done": False}
     running = True
 
     while running:
@@ -310,7 +518,7 @@ def hub_world():
                 draw_text("OK", small_font, GREEN, portal["rect"].right + 8, portal["rect"].y + 18)
 
         if near_portal:
-            draw_text("Aperte E para entrar na fase.", small_font, BLACK, 270, 520)
+            draw_text("Aperte ESPACO para entrar na fase.", small_font, BLACK, 250, 520)
         else:
             draw_text("Explore o mapa e aproxime-se de um portal.", small_font, BLACK, 230, 520)
 
@@ -322,7 +530,7 @@ def hub_world():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
-            if event.type == pygame.KEYDOWN and event.key == pygame.K_e and near_portal:
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE and near_portal:
                 completed = near_portal["phase_fn"]()
                 if completed:
                     progress[near_portal["progress_key"]] = True
@@ -333,16 +541,76 @@ def hub_world():
 
 def main_menu():
     running = True
+    # Carregar imagem intro mantendo proporcoes
+    intro_image = None
+    intro_rect = None
+    try:
+        intro_image = pygame.image.load("tux-escape/intro.png")
+        # Calcular novo tamanho mantendo proporcoes
+        img_width, img_height = intro_image.get_size()
+        aspect_ratio = img_width / img_height
+        
+        # Ajustar para caber na tela (máximo 200 pixels de altura)
+        new_height = min(200, int(SCREEN_WIDTH / aspect_ratio * 0.5))
+        new_width = int(new_height * aspect_ratio)
+        
+        intro_image = pygame.transform.smoothscale(intro_image, (new_width, new_height))
+    except:
+        pass
+    
+    # Botão iniciar
+    button_width = 150
+    button_height = 50
+    button_hover = False
+    
     while running:
-        screen.fill(WHITE)
-        draw_text("Tux Escape: A Revolta dos Circuitos", font, BLACK, 200, 200)
-        draw_text("Clique para iniciar o mapa", font, BLUE, 255, 300)
+        screen.fill(DARK_BG)
+        
+        # Detectar hover do botão
+        mouse_pos = pygame.mouse.get_pos()
+        
+        # Calcular posições centralizadas
+        # Altura disponível para organizar conteúdo
+        content_height = 200 + 30 + 60 + 50 + 60  # imagem + espaço + textos + botão + espaço
+        start_y = (SCREEN_HEIGHT - content_height) // 2
+        
+        current_y = start_y
+        
+        # Desenhar imagem centralizada
+        if intro_image:
+            intro_rect = intro_image.get_rect(centerx=SCREEN_WIDTH // 2, y=current_y)
+            screen.blit(intro_image, intro_rect)
+            current_y += intro_rect.height + 30
+        
+        # Desenhar textos centralizados
+        title_text = font.render("Tux Escape: A Revolta dos Circuitos", True, RED_SOFT)
+        title_rect = title_text.get_rect(centerx=SCREEN_WIDTH // 2, y=current_y)
+        screen.blit(title_text, title_rect)
+        current_y += 40
+        
+        subtitle_text = small_font.render("A Revolta dos Circuitos", True, WHITE_SOFT)
+        subtitle_rect = subtitle_text.get_rect(centerx=SCREEN_WIDTH // 2, y=current_y)
+        screen.blit(subtitle_text, subtitle_rect)
+        current_y += 40
+        
+        # Desenhar botão centralizado
+        button_rect = pygame.Rect(SCREEN_WIDTH // 2 - button_width // 2, current_y, button_width, button_height)
+        button_hover = button_rect.collidepoint(mouse_pos)
+        
+        button_color = (180, 80, 80) if button_hover else RED_SOFT
+        pygame.draw.rect(screen, button_color, button_rect, border_radius=8)
+        pygame.draw.rect(screen, WHITE_SOFT, button_rect, 2, border_radius=8)
+        
+        button_text = font.render("Iniciar", True, WHITE_SOFT)
+        button_text_rect = button_text.get_rect(center=button_rect.center)
+        screen.blit(button_text, button_text_rect)
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
             if event.type == pygame.MOUSEBUTTONDOWN:
-                hub_world()
+                if button_rect.collidepoint(event.pos):
+                    hub_world()
 
         pygame.display.flip()
         CLOCK.tick(FPS)
