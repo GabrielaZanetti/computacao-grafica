@@ -42,7 +42,7 @@ cd /home/gabi/Documentos/GitHub/computacao-grafica
 Rode o script de demonstração:
 
 ```bash
-python3 EI/exemplo_ei01.py
+python3 EI/01/exemplo_ei01.py
 ```
 
 Saída esperada (resumo):
@@ -123,7 +123,7 @@ Fala sugerida:
 No terminal, executar:
 
 ```bash
-python3 EI/exemplo_ei01.py
+python3 EI/01/exemplo_ei01.py
 ```
 
 Fala sugerida:
