@@ -1,0 +1,12 @@
+{
+  "name": "ei04-processamento-imagens",
+  "version": "1.0.0",
+  "description": "Projeto base EI04 - Processamento de Imagens",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}

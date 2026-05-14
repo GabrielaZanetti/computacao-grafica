@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EI04 - Processamento de Imagens</title>
+
+    <link rel="stylesheet" href="style.css">
+
+    <script async src="https://docs.opencv.org/4.x/opencv.js"></script>
+</head>
+<body>
+
+    <aside class="sidebar">
+        <h1>EI04</h1>
+
+        <input type="file" id="imageInput" accept="image/*">
+
+        <div class="controls">
+            <button onclick="applyGray()">Escala de Cinza</button>
+            <button onclick="applyNegative()">Negativo</button>
+            <button onclick="resetImage()">Resetar</button>
+        </div>
+    </aside>
+
+    <main class="content">
+        <canvas id="canvas"></canvas>
+    </main>
+
+    <script src="app.js"></script>
+
+</body>
+</html>
