@@ -366,37 +366,54 @@ def show_gate_explanation(screen, clock, gate_name, gate_color):
         # Entradas
         def draw_input_button(rect, value, label):
             label_text = font_small.render(label, True, pure_white)
-            screen.blit(label_text, (rect.x + 10, rect.y - 40))
+            screen.blit(label_text, (rect.x + 10, rect.y - 42))
 
-            shadow_rect = rect.move(5, 5)
-            pygame.draw.rect(screen, (35, 35, 35), shadow_rect, border_radius=10)
-            base_rect = rect.move(0, 4)
-            pygame.draw.rect(screen, (90, 25, 25), base_rect, border_radius=10)
+            shadow_rect = rect.move(7, 9)
+            pygame.draw.rect(screen, (18, 18, 18), shadow_rect, border_radius=28)
+            pygame.draw.rect(screen, (80, 80, 80), rect.move(0, 7), border_radius=30)
 
-            press_offset = 4 if value else 0
+            press_offset = 7 if value else 0
             button_rect = rect.move(press_offset, press_offset)
             button_color = green_on if value else red_off
-            pygame.draw.rect(screen, button_color, button_rect, border_radius=10)
-            pygame.draw.rect(screen, pure_white, button_rect, 2, border_radius=10)
+            border_color = (10, 120, 10) if value else (70, 0, 0)
+            top_glow = (170, 255, 170) if value else (230, 95, 95)
 
-            highlight_y = button_rect.y + 6 if not value else button_rect.y + 3
-            pygame.draw.line(screen, (255, 255, 255),
-                             (button_rect.x + 12, highlight_y),
-                             (button_rect.right - 12, highlight_y), 2)
+            pygame.draw.rect(screen, border_color, button_rect.inflate(8, 8), border_radius=32)
+            pygame.draw.rect(screen, button_color, button_rect, border_radius=28)
+            pygame.draw.ellipse(screen, top_glow,
+                                (button_rect.x + 14, button_rect.y + 10,
+                                 button_rect.width - 28, button_rect.height // 3))
+            pygame.draw.arc(screen, pure_white, button_rect.inflate(-12, -12), math.radians(200), math.radians(340), 2)
+            pygame.draw.arc(screen, pure_black, button_rect.inflate(-10, -10), math.radians(20), math.radians(150), 2)
 
             value_text = font_medium.render(str(value), True, pure_black)
             screen.blit(value_text, value_text.get_rect(center=button_rect.center))
 
+        def draw_curved_wire(start, end, color, curve_offset):
+            points = []
+            steps = 28
+            for step in range(steps + 1):
+                t = step / steps
+                x = (1 - t) ** 2 * start[0] + 2 * (1 - t) * t * curve_offset[0] + t ** 2 * end[0]
+                y = (1 - t) ** 2 * start[1] + 2 * (1 - t) * t * curve_offset[1] + t ** 2 * end[1]
+                points.append((int(x), int(y)))
+            pygame.draw.lines(screen, color, False, points, 5)
+            pygame.draw.lines(screen, pure_white, False, points, 1)
+
         draw_input_button(btn_input1, input1, "Entrada 1")
         draw_input_button(btn_input2, input2, "Entrada 2")
 
-        # Fios (vindo de baixo dos botões até a lâmpada)
+        # Fios curvos até a lâmpada
         wire1_color = green_on if input1 else red_off
-        pygame.draw.line(screen, wire1_color, (btn_input1.centerx, btn_input1.bottom + 10),
-                         (lamp_rect.centerx - 30, lamp_rect.centery), 4)
+        draw_curved_wire((btn_input1.centerx, btn_input1.bottom + 12),
+                         (lamp_rect.centerx - 30, lamp_rect.centery),
+                         wire1_color,
+                         (430, 245))
         wire2_color = green_on if input2 else red_off
-        pygame.draw.line(screen, wire2_color, (btn_input2.centerx, btn_input2.bottom + 10),
-                         (lamp_rect.centerx + 30, lamp_rect.centery), 4)
+        draw_curved_wire((btn_input2.centerx, btn_input2.bottom + 12),
+                         (lamp_rect.centerx + 30, lamp_rect.centery),
+                         wire2_color,
+                         (460, 535))
 
         # Desenha uma lâmpada estilizada
         bulb_center = (lamp_rect.centerx, lamp_rect.centery - 20)
