@@ -3,10 +3,13 @@ import sys
 import os
 import math
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
 class PlayerAnimator:
     """Gerencia a animação do personagem baseado na direção e movimentação."""
-    def __init__(self, images_path="tux-escape/images"):
-        self.images_path = images_path
+    def __init__(self, images_path=None, scale=0.55):
+        self.images_path = images_path or os.path.join(BASE_DIR, "images")
+        self.scale = scale
         self.animations = {}
         self.current_direction = "front"
         self.current_frame = 0
@@ -18,16 +21,34 @@ class PlayerAnimator:
     
     def load_animations(self):
         """Carrega todas as imagens de animação."""
-        directions = ["front", "back", "left", "right"]
-        for direction in directions:
+        fallback_path = os.path.join(BASE_DIR, "tux.png")
+        fallback_img = None
+        if os.path.exists(fallback_path):
+            fallback_img = pygame.image.load(fallback_path).convert_alpha()
+
+        direction_files = {
+            "front": "front",
+            "back": "back",
+            "left": "left",
+            "right": "right",
+        }
+        for direction, file_prefix in direction_files.items():
             self.animations[direction] = []
             for i in range(1, 4):  # 3 frames por direção
-                try:
-                    path = os.path.join(self.images_path, f"{direction}{i}.png")
+                path = os.path.join(self.images_path, f"{file_prefix}{i}.png")
+                if os.path.exists(path):
                     img = pygame.image.load(path).convert_alpha()
-                    self.animations[direction].append(img)
-                except Exception as e:
-                    print(f"Erro ao carregar {path}: {e}")
+                elif fallback_img:
+                    img = fallback_img.copy()
+                else:
+                    img = pygame.Surface((40, 52), pygame.SRCALPHA)
+                    pygame.draw.ellipse(img, (255, 255, 255), (6, 4, 28, 44))
+                    pygame.draw.ellipse(img, (0, 0, 0), (10, 8, 20, 36))
+                if self.scale != 1:
+                    width = max(1, int(img.get_width() * self.scale))
+                    height = max(1, int(img.get_height() * self.scale))
+                    img = pygame.transform.smoothscale(img, (width, height))
+                self.animations[direction].append(img)
     
     def update(self, dx, dy):
         """Atualiza a animação baseado no movimento."""
@@ -43,7 +64,11 @@ class PlayerAnimator:
             self.frame_counter += 1
             if self.frame_counter >= self.frame_delay:
                 self.frame_counter = 0
-                self.current_frame = (self.current_frame + 1) % 3
+                frames = self.animations.get(self.current_direction, [])
+                if frames:
+                    self.current_frame = (self.current_frame + 1) % len(frames)
+                else:
+                    self.current_frame = 0
         else:
             # Reseta a animação quando parar de se mover
             self.frame_counter = 0
@@ -51,8 +76,15 @@ class PlayerAnimator:
     
     def get_current_image(self):
         """Retorna a imagem atual da animação."""
-        if self.current_direction in self.animations:
-            return self.animations[self.current_direction][self.current_frame]
+        frames = self.animations.get(self.current_direction, [])
+        if not frames:
+            for fallback_frames in self.animations.values():
+                if fallback_frames:
+                    frames = fallback_frames
+                    break
+        if frames:
+            self.current_frame %= len(frames)
+            return frames[self.current_frame]
         return None
     
     def get_rect(self, pos):
@@ -60,23 +92,10 @@ class PlayerAnimator:
         img = self.get_current_image()
         if img:
             return img.get_rect(center=pos)
-        return pygame.Rect(pos[0], pos[1], 40, 52)
+        return pygame.Rect(pos[0], pos[1], int(40 * self.scale), int(52 * self.scale))
 
-def load_intro_surface(path_pdf="tux-escape/intro.pdf", path_png="tux-escape/intro.png"):
-    # Tenta renderizar PDF com PyMuPDF (fitz). Se não disponível, tenta PNG.
-    try:
-        import fitz
-        if os.path.exists(path_pdf):
-            doc = fitz.open(path_pdf)
-            page = doc.load_page(0)
-            mat = fitz.Matrix(2, 2)
-            pix = page.get_pixmap(matrix=mat)
-            mode = "RGBA" if pix.alpha else "RGB"
-            surf = pygame.image.frombuffer(pix.samples, (pix.width, pix.height), mode)
-            return surf
-    except Exception:
-        pass
-
+def load_intro_surface():
+    path_png = os.path.join(BASE_DIR, "intro.png")
     try:
         if os.path.exists(path_png):
             img = pygame.image.load(path_png)
@@ -136,7 +155,7 @@ def main_menu():
             ph_h = 200
             ph_rect = pygame.Rect((SCREEN_WIDTH - ph_w) // 2, current_y, ph_w, ph_h)
             pygame.draw.rect(screen, (60, 60, 70), ph_rect, border_radius=8)
-            txt_ph = small.render("(intro.pdf não encontrado)", True, SOFT_WHITE)
+            txt_ph = small.render("(intro.png não encontrado)", True, SOFT_WHITE)
             screen.blit(txt_ph, txt_ph.get_rect(center=ph_rect.center))
             current_y += ph_h + 20
 
@@ -163,7 +182,8 @@ def main_menu():
                 running = False
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if btn_rect.collidepoint(event.pos):
-                    run_game(screen, clock)
+                    show_portal_map(screen, clock)
+                    running = False
 
         pygame.display.flip()
         clock.tick(60)
@@ -173,7 +193,7 @@ def main_menu():
 
 
 def show_portal_map(screen, clock):
-    """Mapa com 3 portas (AND, OR, NOT) que o jogador pode explorar"""
+    """Mapa com 3 portas (AND, OR, NOR) que o jogador pode explorar"""
     font_big = pygame.font.Font(None, 64)
     font_small = pygame.font.Font(None, 32)
     font_tiny = pygame.font.Font(None, 20)
@@ -193,7 +213,7 @@ def show_portal_map(screen, clock):
     gates_info = [
         {"name": "AND", "color": blue, "rect": pygame.Rect(150, 150, 150, 200), "done": False},
         {"name": "OR", "color": yellow, "rect": pygame.Rect(425, 150, 150, 200), "done": False},
-        {"name": "NOT", "color": green, "rect": pygame.Rect(700, 150, 150, 200), "done": False},
+        {"name": "NOR", "color": green, "rect": pygame.Rect(700, 150, 150, 200), "done": False},
     ]
     
     running = True
@@ -273,7 +293,7 @@ def show_portal_map(screen, clock):
             screen.blit(player_img, player_rect)
         
         # Instrução
-        hint = font_tiny.render("Clique em uma porta para entrar | ESC para voltar", True, pure_white)
+        hint = font_tiny.render("Encoste em uma porta para entrar | ESC para voltar", True, pure_white)
         screen.blit(hint, (50, screen.get_height() - 30))
         
         pygame.display.flip()
@@ -294,9 +314,9 @@ def show_gate_explanation(screen, clock, gate_name, gate_color):
     dark_gray = (40, 40, 40)
 
     descriptions = {
-        "AND": ("Porta AND", "Saída = 1 apenas se AMBAS as entradas são 1"),
-        "OR": ("Porta OR", "Saída = 1 se PELO MENOS UMA entrada é 1"),
-        "NOT": ("Porta NOT", "Saída = INVERSA da entrada (0→1, 1→0)")
+        "AND": ("Porta E (AND)", "Saída = 1 apenas se AMBAS as entradas são 1"),
+        "OR": ("Porta OU (OR)", "Saída = 1 se PELO MENOS UMA entrada é 1"),
+        "NOR": ("Porta NOR", "Saída = 1 apenas se NENHUMA entrada é 1")
     }
 
     input1 = 0
@@ -324,7 +344,7 @@ def show_gate_explanation(screen, clock, gate_name, gate_color):
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if btn_input1.collidepoint(event.pos):
                     input1 = 1 - input1
-                if gate_name != "NOT" and btn_input2.collidepoint(event.pos):
+                if btn_input2.collidepoint(event.pos):
                     input2 = 1 - input2
 
         if gate_name == "AND":
@@ -332,7 +352,7 @@ def show_gate_explanation(screen, clock, gate_name, gate_color):
         elif gate_name == "OR":
             output = input1 or input2
         else:
-            output = not input1
+            output = not (input1 or input2)
 
         screen.fill(pure_black)
 
@@ -343,31 +363,40 @@ def show_gate_explanation(screen, clock, gate_name, gate_color):
         screen.blit(desc_text, (100, 120))
 
 
-        # Entrada 1
-        label_in1 = font_small.render("Entrada 1", True, pure_white)
-        screen.blit(label_in1, (btn_input1.x + 10, btn_input1.y - 40))
-        color_in1 = green_on if input1 else red_off
-        pygame.draw.rect(screen, color_in1, btn_input1, border_radius=8)
-        val_text1 = font_medium.render(str(input1), True, pure_black)
-        screen.blit(val_text1, val_text1.get_rect(center=btn_input1.center))
+        # Entradas
+        def draw_input_button(rect, value, label):
+            label_text = font_small.render(label, True, pure_white)
+            screen.blit(label_text, (rect.x + 10, rect.y - 40))
 
-        # Entrada 2 (se aplicável)
-        if gate_name != "NOT":
-            label_in2 = font_small.render("Entrada 2", True, pure_white)
-            screen.blit(label_in2, (btn_input2.x + 10, btn_input2.y - 40))
-            color_in2 = green_on if input2 else red_off
-            pygame.draw.rect(screen, color_in2, btn_input2, border_radius=8)
-            val_text2 = font_medium.render(str(input2), True, pure_black)
-            screen.blit(val_text2, val_text2.get_rect(center=btn_input2.center))
+            shadow_rect = rect.move(5, 5)
+            pygame.draw.rect(screen, (35, 35, 35), shadow_rect, border_radius=10)
+            base_rect = rect.move(0, 4)
+            pygame.draw.rect(screen, (90, 25, 25), base_rect, border_radius=10)
+
+            press_offset = 4 if value else 0
+            button_rect = rect.move(press_offset, press_offset)
+            button_color = green_on if value else red_off
+            pygame.draw.rect(screen, button_color, button_rect, border_radius=10)
+            pygame.draw.rect(screen, pure_white, button_rect, 2, border_radius=10)
+
+            highlight_y = button_rect.y + 6 if not value else button_rect.y + 3
+            pygame.draw.line(screen, (255, 255, 255),
+                             (button_rect.x + 12, highlight_y),
+                             (button_rect.right - 12, highlight_y), 2)
+
+            value_text = font_medium.render(str(value), True, pure_black)
+            screen.blit(value_text, value_text.get_rect(center=button_rect.center))
+
+        draw_input_button(btn_input1, input1, "Entrada 1")
+        draw_input_button(btn_input2, input2, "Entrada 2")
 
         # Fios (vindo de baixo dos botões até a lâmpada)
         wire1_color = green_on if input1 else red_off
         pygame.draw.line(screen, wire1_color, (btn_input1.centerx, btn_input1.bottom + 10),
                          (lamp_rect.centerx - 30, lamp_rect.centery), 4)
-        if gate_name != "NOT":
-            wire2_color = green_on if input2 else red_off
-            pygame.draw.line(screen, wire2_color, (btn_input2.centerx, btn_input2.bottom + 10),
-                             (lamp_rect.centerx + 30, lamp_rect.centery), 4)
+        wire2_color = green_on if input2 else red_off
+        pygame.draw.line(screen, wire2_color, (btn_input2.centerx, btn_input2.bottom + 10),
+                         (lamp_rect.centerx + 30, lamp_rect.centery), 4)
 
         # Desenha uma lâmpada estilizada
         bulb_center = (lamp_rect.centerx, lamp_rect.centery - 20)
@@ -407,7 +436,7 @@ def show_gate_explanation(screen, clock, gate_name, gate_color):
         elif gate_name == "OR":
             operation = f"{input1} OR {input2} = {int(output)}"
         else:
-            operation = f"NOT {input1} = {int(output)}"
+            operation = f"{input1} NOR {input2} = {int(output)}"
         op_text = font_small.render(operation, True, gate_color)
         screen.blit(op_text, (100, 480))
         hint = font_tiny.render("Pressione ENTER ou ESC para voltar", True, pure_white)
