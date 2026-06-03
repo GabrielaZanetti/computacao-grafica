@@ -26,7 +26,7 @@ global_settings {
 #declare FaixaInf1Y = -0.88;
 #declare FaixaInf2Y = -1.08;
 
-#declare AzulUNIJUI = rgb <0.055,0.239,0.549>;
+#declare AzulUNIJUI = rgb <0.0, 0.2706, 0.5569>;
 
 #declare TexturaAzul =
 texture {
