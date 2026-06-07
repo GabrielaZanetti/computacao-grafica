@@ -193,117 +193,35 @@ def main_menu():
 
 
 def show_portal_map(screen, clock):
-    """Mapa com 3 portas (AND, OR, NOR) que o jogador pode explorar"""
-    font_big = pygame.font.Font(None, 64)
-    font_small = pygame.font.Font(None, 32)
-    font_tiny = pygame.font.Font(None, 20)
-    
-    pure_black = (0, 0, 0)
-    pure_white = (255, 255, 255)
-    blue = (0, 100, 200)
-    yellow = (255, 255, 0)
-    green = (0, 200, 0)
-    
-    # Inicializa o animador do personagem
     player_animator = PlayerAnimator()
     player_pos = [500, 600]
-    player_speed = 4
-    
-    # 3 Portas
-    gates_info = [
-        {"name": "AND", "color": blue, "rect": pygame.Rect(150, 150, 150, 200), "done": False},
-        {"name": "OR", "color": yellow, "rect": pygame.Rect(425, 150, 150, 200), "done": False},
-        {"name": "NOR", "color": green, "rect": pygame.Rect(700, 150, 150, 200), "done": False},
-    ]
-    
-    running = True
-    while running:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit()
-            if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-                running = False
-        
-        keys = pygame.key.get_pressed()
-        dx = 0
-        dy = 0
-        
-        if keys[pygame.K_LEFT] or keys[pygame.K_a]:
-            dx -= player_speed
-        if keys[pygame.K_RIGHT] or keys[pygame.K_d]:
-            dx += player_speed
-        if keys[pygame.K_UP] or keys[pygame.K_w]:
-            dy -= player_speed
-        if keys[pygame.K_DOWN] or keys[pygame.K_s]:
-            dy += player_speed
-        
-        # Atualiza animação
-        player_animator.update(dx, dy)
-        
-        # Move o personagem
-        next_pos = [player_pos[0] + dx, player_pos[1] + dy]
-        next_pos[0] = max(50, min(screen.get_width() - 50, next_pos[0]))
-        next_pos[1] = max(50, min(screen.get_height() - 100, next_pos[1]))
-        player_pos = next_pos
-        
-        player_rect = player_animator.get_rect(player_pos)
-        
-        # Verifica colisão com as portas
-        for i, gate in enumerate(gates_info):
-            gate_trigger = pygame.Rect(
-                gate["rect"].x + 8,
-                gate["rect"].y,
-                gate["rect"].width - 16,
-                max(36, gate["rect"].height // 5),
-            )
-            if player_rect.colliderect(gate_trigger):
-                # Só entra se a porta ainda não estiver concluída
-                if not gate.get("done"):
-                    show_gate_explanation(screen, clock, gate["name"], gate["color"])
-                    gates_info[i]["done"] = True
-                # Reposiciona abaixo da porta para evitar reentrada imediata
-                player_pos = [gate["rect"].centerx, gate["rect"].bottom + 100]
-                break
-        
-        screen.fill(pure_black)
-        
-        # Título do mapa
-        title = font_big.render("ESCOLHA UMA PORTA", True, pure_white)
-        screen.blit(title, (screen.get_width() // 2 - title.get_width() // 2, 20))
-        
-        # Desenha as 3 portas
-        for gate in gates_info:
-            pygame.draw.rect(screen, gate["color"], gate["rect"], border_radius=12)
-            pygame.draw.rect(screen, pure_white, gate["rect"], 3, border_radius=12)
-            
-            # Nome da porta
-            name_text = font_small.render(gate["name"], True, pure_black)
-            screen.blit(name_text, name_text.get_rect(center=(gate["rect"].centerx, gate["rect"].centery - 30)))
-            
-            # Marca concluída (OK) se 'done' estiver True
-            if gate.get("done"):
-                pad = 5
-                ok_text = font_small.render("OK", True, (0, 200, 0))
-                ok_w, ok_h = ok_text.get_width(), ok_text.get_height()
-                ok_bg_w, ok_bg_h = ok_w + pad * 2, ok_h + pad * 2
-                ok_bg_x = gate["rect"].right - ok_bg_w - 8
-                ok_bg_y = gate["rect"].top + 8
-                ok_bg = pygame.Rect(ok_bg_x, ok_bg_y, ok_bg_w, ok_bg_h)
-                pygame.draw.rect(screen, pure_white, ok_bg, border_radius=6)
-                screen.blit(ok_text, (ok_bg.x + pad, ok_bg.y + pad))
-        
-        # Desenha o personagem
-        player_img = player_animator.get_current_image()
-        if player_img:
-            screen.blit(player_img, player_rect)
-        
-        # Instrução
-        hint = font_tiny.render("Encoste em uma porta para entrar | ESC para voltar", True, pure_white)
-        screen.blit(hint, (50, screen.get_height() - 30))
-        
-        pygame.display.flip()
-        clock.tick(60)
+
+    completed, player_pos = show_portal_phase(
+        screen,
+        clock,
+        "FASE 1",
+        build_portal_gates(1),
+        player_animator,
+        player_pos,
+    )
+    if not completed:
+        return
+
+    animate_phase_transition(screen, clock, player_animator, player_pos, "FASE 1", "FASE 2")
+
+    player_animator = PlayerAnimator()
+    player_pos = [120, 600]
+
+    completed, player_pos = show_portal_phase(
+        screen,
+        clock,
+        "FASE 2",
+        build_portal_gates(2),
+        player_animator,
+        player_pos,
+    )
+    if not completed:
+        return
 
 
 def show_gate_explanation(screen, clock, gate_name, gate_color):
@@ -322,7 +240,10 @@ def show_gate_explanation(screen, clock, gate_name, gate_color):
     descriptions = {
         "AND": ("Porta E (AND)", "Saída = 1 apenas se AMBAS as entradas são 1"),
         "OR": ("Porta OU (OR)", "Saída = 1 se PELO MENOS UMA entrada é 1"),
-        "NOR": ("Porta NOR", "Saída = 1 apenas se NENHUMA entrada é 1")
+        "NOR": ("Porta NOR", "Saída = 1 apenas se NENHUMA entrada é 1"),
+        "XOR": ("Porta XOR", "Saída = 1 se APENAS UMA entrada é 1"),
+        "XNOR": ("Porta XNOR", "Saída = 1 se as DUAS entradas forem iguais"),
+        "NAND": ("Porta NAND", "Saída = 0 apenas se AMBAS as entradas são 1"),
     }
 
     input1 = 0
@@ -357,8 +278,14 @@ def show_gate_explanation(screen, clock, gate_name, gate_color):
             output = input1 and input2
         elif gate_name == "OR":
             output = input1 or input2
-        else:
+        elif gate_name == "NOR":
             output = not (input1 or input2)
+        elif gate_name == "XOR":
+            output = bool(input1) != bool(input2)
+        elif gate_name == "XNOR":
+            output = bool(input1) == bool(input2)
+        else:
+            output = not (input1 and input2)
 
         screen.fill(pure_black)
 
@@ -458,12 +385,158 @@ def show_gate_explanation(screen, clock, gate_name, gate_color):
             operation = f"{input1} AND {input2} = {int(output)}"
         elif gate_name == "OR":
             operation = f"{input1} OR {input2} = {int(output)}"
-        else:
+        elif gate_name == "NOR":
             operation = f"{input1} NOR {input2} = {int(output)}"
+        elif gate_name == "XOR":
+            operation = f"{input1} XOR {input2} = {int(output)}"
+        elif gate_name == "XNOR":
+            operation = f"{input1} XNOR {input2} = {int(output)}"
+        else:
+            operation = f"{input1} NAND {input2} = {int(output)}"
         op_text = font_small.render(operation, True, gate_color)
         screen.blit(op_text, (100, 480))
         hint = font_tiny.render("Pressione ENTER ou ESC para voltar", True, pure_white)
         screen.blit(hint, (100, 620))
+
+        pygame.display.flip()
+        clock.tick(60)
+
+
+def build_portal_gates(phase_number):
+    if phase_number == 1:
+        return [
+            {"name": "AND", "color": (0, 100, 200), "rect": pygame.Rect(150, 150, 150, 200), "done": False},
+            {"name": "OR", "color": (255, 255, 0), "rect": pygame.Rect(425, 150, 150, 200), "done": False},
+            {"name": "NOR", "color": (0, 200, 0), "rect": pygame.Rect(700, 150, 150, 200), "done": False},
+        ]
+
+    return [
+        {"name": "XOR", "color": (255, 140, 0), "rect": pygame.Rect(150, 150, 150, 200), "done": False},
+        {"name": "XNOR", "color": (180, 90, 220), "rect": pygame.Rect(425, 150, 150, 200), "done": False},
+        {"name": "NAND", "color": (0, 180, 180), "rect": pygame.Rect(700, 150, 150, 200), "done": False},
+    ]
+
+
+def animate_phase_transition(screen, clock, player_animator, start_pos, from_phase, to_phase):
+    font_big = pygame.font.Font(None, 64)
+    font_small = pygame.font.Font(None, 32)
+    pure_black = (0, 0, 0)
+    pure_white = (255, 255, 255)
+
+    transition_pos = [start_pos[0], start_pos[1]]
+    step = 6
+
+    while transition_pos[0] < screen.get_width() + 80:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+
+        player_animator.update(step, 0)
+        transition_pos[0] += step
+
+        screen.fill(pure_black)
+
+        title = font_big.render(f"{from_phase} concluída", True, pure_white)
+        subtitle = font_small.render(f"Indo para {to_phase}...", True, pure_white)
+        screen.blit(title, title.get_rect(center=(screen.get_width() // 2, 90)))
+        screen.blit(subtitle, subtitle.get_rect(center=(screen.get_width() // 2, 150)))
+
+        player_img = player_animator.get_current_image()
+        if player_img:
+            player_rect = player_animator.get_rect(transition_pos)
+            screen.blit(player_img, player_rect)
+
+        pygame.display.flip()
+        clock.tick(60)
+
+
+def show_portal_phase(screen, clock, phase_label, gates_info, player_animator, player_pos):
+    font_big = pygame.font.Font(None, 64)
+    font_small = pygame.font.Font(None, 32)
+    font_tiny = pygame.font.Font(None, 20)
+
+    pure_black = (0, 0, 0)
+    pure_white = (255, 255, 255)
+
+    player_speed = 4
+    running = True
+    while running:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                return False, player_pos
+
+        if all(gate.get("done") for gate in gates_info):
+            return True, player_pos
+
+        keys = pygame.key.get_pressed()
+        dx = 0
+        dy = 0
+
+        if keys[pygame.K_LEFT] or keys[pygame.K_a]:
+            dx -= player_speed
+        if keys[pygame.K_RIGHT] or keys[pygame.K_d]:
+            dx += player_speed
+        if keys[pygame.K_UP] or keys[pygame.K_w]:
+            dy -= player_speed
+        if keys[pygame.K_DOWN] or keys[pygame.K_s]:
+            dy += player_speed
+
+        player_animator.update(dx, dy)
+
+        next_pos = [player_pos[0] + dx, player_pos[1] + dy]
+        next_pos[0] = max(50, min(screen.get_width() - 50, next_pos[0]))
+        next_pos[1] = max(50, min(screen.get_height() - 100, next_pos[1]))
+        player_pos = next_pos
+
+        player_rect = player_animator.get_rect(player_pos)
+
+        for i, gate in enumerate(gates_info):
+            gate_trigger = pygame.Rect(
+                gate["rect"].x + 8,
+                gate["rect"].y,
+                gate["rect"].width - 16,
+                max(36, gate["rect"].height // 5),
+            )
+            if player_rect.colliderect(gate_trigger):
+                if not gate.get("done"):
+                    show_gate_explanation(screen, clock, gate["name"], gate["color"])
+                    gates_info[i]["done"] = True
+                player_pos = [gate["rect"].centerx, gate["rect"].bottom + 100]
+                break
+
+        screen.fill(pure_black)
+
+        title = font_big.render(f"{phase_label} - ESCOLHA UMA PORTA", True, pure_white)
+        screen.blit(title, title.get_rect(center=(screen.get_width() // 2, 20)))
+
+        for gate in gates_info:
+            pygame.draw.rect(screen, gate["color"], gate["rect"], border_radius=12)
+            pygame.draw.rect(screen, pure_white, gate["rect"], 3, border_radius=12)
+
+            name_text = font_small.render(gate["name"], True, pure_black)
+            screen.blit(name_text, name_text.get_rect(center=(gate["rect"].centerx, gate["rect"].centery - 30)))
+
+            if gate.get("done"):
+                pad = 5
+                ok_text = font_small.render("OK", True, (0, 200, 0))
+                ok_w, ok_h = ok_text.get_width(), ok_text.get_height()
+                ok_bg_w, ok_bg_h = ok_w + pad * 2, ok_h + pad * 2
+                ok_bg_x = gate["rect"].right - ok_bg_w - 8
+                ok_bg_y = gate["rect"].top + 8
+                ok_bg = pygame.Rect(ok_bg_x, ok_bg_y, ok_bg_w, ok_bg_h)
+                pygame.draw.rect(screen, pure_white, ok_bg, border_radius=6)
+                screen.blit(ok_text, (ok_bg.x + pad, ok_bg.y + pad))
+
+        player_img = player_animator.get_current_image()
+        if player_img:
+            screen.blit(player_img, player_rect)
+
+        hint = font_tiny.render("Encoste em uma porta para entrar | ESC para voltar", True, pure_white)
+        screen.blit(hint, (50, screen.get_height() - 30))
 
         pygame.display.flip()
         clock.tick(60)
