@@ -248,13 +248,15 @@ def show_gate_explanation(screen, clock, gate_name, gate_color):
 
     input1 = 0
     input2 = 0
+    interacted = False
+    completed = False
 
     # Botões de entrada (empilhados)
-    btn_input1 = pygame.Rect(200, 300, 120, 80)
-    btn_input2 = pygame.Rect(200, 420, 120, 80)
+    btn_input1 = pygame.Rect(120, 215, 54, 54)
+    btn_input2 = pygame.Rect(120, 335, 54, 54)
 
     # Lâmpada
-    lamp_rect = pygame.Rect(750, 300, 120, 150)
+    lamp_rect = pygame.Rect(820, 260, 44, 80)
 
     gate_title, gate_desc = descriptions[gate_name]
 
@@ -271,8 +273,10 @@ def show_gate_explanation(screen, clock, gate_name, gate_color):
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if btn_input1.collidepoint(event.pos):
                     input1 = 1 - input1
+                    interacted = True
                 if btn_input2.collidepoint(event.pos):
                     input2 = 1 - input2
+                    interacted = True
 
         if gate_name == "AND":
             output = input1 and input2
@@ -287,98 +291,10 @@ def show_gate_explanation(screen, clock, gate_name, gate_color):
         else:
             output = not (input1 and input2)
 
+        completed = interacted and bool(output)
+
         screen.fill(pure_black)
-
-        # Título e descrição
-        title = font_big.render(gate_title, True, gate_color)
-        screen.blit(title, (100, 30))
-        desc_text = font_small.render(gate_desc, True, gate_color)
-        screen.blit(desc_text, (100, 120))
-
-
-        # Entradas
-        def draw_input_button(rect, value, label):
-            label_text = font_small.render(label, True, pure_white)
-            screen.blit(label_text, (rect.x + 10, rect.y - 42))
-
-            shadow_rect = rect.move(7, 9)
-            pygame.draw.rect(screen, (18, 18, 18), shadow_rect, border_radius=28)
-            pygame.draw.rect(screen, (80, 80, 80), rect.move(0, 7), border_radius=30)
-
-            press_offset = 7 if value else 0
-            button_rect = rect.move(press_offset, press_offset)
-            button_color = green_on if value else red_off
-            border_color = (10, 120, 10) if value else (70, 0, 0)
-            top_glow = (170, 255, 170) if value else (230, 95, 95)
-
-            pygame.draw.rect(screen, border_color, button_rect.inflate(8, 8), border_radius=32)
-            pygame.draw.rect(screen, button_color, button_rect, border_radius=28)
-            pygame.draw.ellipse(screen, top_glow,
-                                (button_rect.x + 14, button_rect.y + 10,
-                                 button_rect.width - 28, button_rect.height // 3))
-            pygame.draw.arc(screen, pure_white, button_rect.inflate(-12, -12), math.radians(200), math.radians(340), 2)
-            pygame.draw.arc(screen, pure_black, button_rect.inflate(-10, -10), math.radians(20), math.radians(150), 2)
-
-            value_text = font_medium.render(str(value), True, pure_black)
-            screen.blit(value_text, value_text.get_rect(center=button_rect.center))
-
-        def draw_curved_wire(start, end, color, curve_offset):
-            points = []
-            steps = 28
-            for step in range(steps + 1):
-                t = step / steps
-                x = (1 - t) ** 2 * start[0] + 2 * (1 - t) * t * curve_offset[0] + t ** 2 * end[0]
-                y = (1 - t) ** 2 * start[1] + 2 * (1 - t) * t * curve_offset[1] + t ** 2 * end[1]
-                points.append((int(x), int(y)))
-            pygame.draw.lines(screen, color, False, points, 5)
-            pygame.draw.lines(screen, pure_white, False, points, 1)
-
-        draw_input_button(btn_input1, input1, "Entrada 1")
-        draw_input_button(btn_input2, input2, "Entrada 2")
-
-        # Fios curvos até a lâmpada
-        wire1_color = green_on if input1 else red_off
-        draw_curved_wire((btn_input1.centerx, btn_input1.bottom + 12),
-                         (lamp_rect.centerx - 30, lamp_rect.centery),
-                         wire1_color,
-                         (430, 245))
-        wire2_color = green_on if input2 else red_off
-        draw_curved_wire((btn_input2.centerx, btn_input2.bottom + 12),
-                         (lamp_rect.centerx + 30, lamp_rect.centery),
-                         wire2_color,
-                         (460, 535))
-
-        # Desenha uma lâmpada estilizada
-        bulb_center = (lamp_rect.centerx, lamp_rect.centery - 20)
-        bulb_radius = min(lamp_rect.width, lamp_rect.height) // 4
-        # Glow quando ligada
-        if output:
-            glow_s = pygame.Surface((bulb_radius * 6, bulb_radius * 6), pygame.SRCALPHA)
-            glow_color = (255, 220, 80, 80)
-            pygame.draw.circle(glow_s, glow_color, (glow_s.get_width() // 2, glow_s.get_height() // 2), bulb_radius * 2)
-            screen.blit(glow_s, (bulb_center[0] - glow_s.get_width() // 2, bulb_center[1] - glow_s.get_height() // 2))
-
-        # Corpo do bulbo
-        bulb_color = (255, 220, 80) if output else (80, 80, 80)
-        pygame.draw.circle(screen, bulb_color, bulb_center, bulb_radius)
-        pygame.draw.circle(screen, pure_white, bulb_center, bulb_radius, 2)
-
-        # Filamento
-        fil_color = (200, 100, 0) if output else (50, 30, 30)
-        fx, fy = bulb_center
-        pygame.draw.line(screen, fil_color, (fx - bulb_radius // 2, fy), (fx + bulb_radius // 2, fy), 3)
-        pygame.draw.line(screen, fil_color, (fx - bulb_radius // 2 + 6, fy + 6), (fx - bulb_radius // 2, fy), 2)
-        pygame.draw.line(screen, fil_color, (fx + bulb_radius // 2 - 6, fy + 6), (fx + bulb_radius // 2, fy), 2)
-
-        # Base da lâmpada
-        base_w = bulb_radius
-        base_h = bulb_radius // 2
-        base_rect = pygame.Rect(fx - base_w // 2, fy + bulb_radius - 4, base_w, base_h)
-        pygame.draw.rect(screen, (100, 100, 100), base_rect)
-        pygame.draw.rect(screen, pure_white, base_rect, 2)
-
-        lamp_label = font_small.render("Saída", True, pure_white)
-        screen.blit(lamp_label, (lamp_rect.x + 20, lamp_rect.bottom + 10))
+        draw_gate_explanation_scene(screen, gate_name, gate_color, input1, input2, output, completed)
 
         # Operação e instrução
         if gate_name == "AND":
@@ -394,12 +310,12 @@ def show_gate_explanation(screen, clock, gate_name, gate_color):
         else:
             operation = f"{input1} NAND {input2} = {int(output)}"
         op_text = font_small.render(operation, True, gate_color)
-        screen.blit(op_text, (100, 480))
-        hint = font_tiny.render("Pressione ENTER ou ESC para voltar", True, pure_white)
-        screen.blit(hint, (100, 620))
+        screen.blit(op_text, (100, 520))
 
         pygame.display.flip()
         clock.tick(60)
+
+    return completed
 
 
 def build_portal_gates(phase_number):
@@ -415,6 +331,175 @@ def build_portal_gates(phase_number):
         {"name": "XNOR", "color": (180, 90, 220), "rect": pygame.Rect(425, 150, 150, 200), "done": False},
         {"name": "NAND", "color": (0, 180, 180), "rect": pygame.Rect(700, 150, 150, 200), "done": False},
     ]
+
+
+def draw_gate_icon(surface, gate_name, rect, color, done=False):
+    panel_color = (26, 26, 32)
+    frame_color = tuple(min(255, c + 40) for c in color)
+    wire_color = (230, 230, 230)
+    button_on = (0, 210, 0)
+    button_off = (120, 35, 35)
+    lamp_on = (255, 220, 70)
+    lamp_off = (90, 90, 90)
+
+    pygame.draw.rect(surface, panel_color, rect, border_radius=18)
+    pygame.draw.rect(surface, frame_color if done else color, rect, 4, border_radius=18)
+
+    font = pygame.font.Font(None, 24)
+    title = font.render(f"{gate_name}", True, (255, 255, 255))
+    surface.blit(title, title.get_rect(center=(rect.centerx, rect.top + 24)))
+
+    btn1 = pygame.Rect(rect.x + 24, rect.centery - 44, 38, 38)
+    btn2 = pygame.Rect(rect.x + 24, rect.centery + 6, 38, 38)
+    lamp = pygame.Rect(rect.right - 62, rect.centery - 22, 34, 44)
+
+    # fios e conexoes
+    pygame.draw.line(surface, wire_color, (btn1.right, btn1.centery), (lamp.left - 12, btn1.centery), 4)
+    pygame.draw.line(surface, wire_color, (btn2.right, btn2.centery), (lamp.left - 12, btn2.centery), 4)
+    pygame.draw.line(surface, wire_color, (lamp.left - 12, btn1.centery), (lamp.left - 12, btn2.centery), 4)
+    pygame.draw.line(surface, wire_color, (lamp.left - 12, lamp.centery), (lamp.left, lamp.centery), 4)
+
+    pygame.draw.circle(surface, button_on if done else button_off, btn1.center, 19)
+    pygame.draw.circle(surface, button_on if done else button_off, btn2.center, 19)
+    pygame.draw.circle(surface, (255, 255, 255), btn1.center, 19, 2)
+    pygame.draw.circle(surface, (255, 255, 255), btn2.center, 19, 2)
+
+    btn_font = pygame.font.Font(None, 22)
+    b1 = btn_font.render("1", True, (255, 255, 255))
+    b2 = btn_font.render("2", True, (255, 255, 255))
+    surface.blit(b1, b1.get_rect(center=btn1.center))
+    surface.blit(b2, b2.get_rect(center=btn2.center))
+
+    pygame.draw.circle(surface, lamp_on if done else lamp_off, lamp.center, 18)
+    pygame.draw.circle(surface, (255, 255, 255), lamp.center, 18, 2)
+    if done:
+        glow = pygame.Surface((80, 80), pygame.SRCALPHA)
+        pygame.draw.circle(glow, (255, 220, 70, 80), (40, 40), 22)
+        surface.blit(glow, (lamp.centerx - 40, lamp.centery - 40))
+
+    out_label = font.render("LUZ", True, (255, 255, 255))
+    surface.blit(out_label, out_label.get_rect(center=(lamp.centerx, lamp.bottom + 12)))
+
+    if done:
+        ok_font = pygame.font.Font(None, 24)
+        ok_text = ok_font.render("OK", True, (0, 210, 0))
+        ok_bg = pygame.Rect(rect.right - 54, rect.top + 12, 40, 24)
+        pygame.draw.rect(surface, (255, 255, 255), ok_bg, border_radius=6)
+        surface.blit(ok_text, ok_text.get_rect(center=ok_bg.center))
+
+
+def draw_gate_explanation_scene(surface, gate_name, gate_color, input1, input2, output, show_ok=False):
+    bg = pygame.Surface(surface.get_size())
+    bg.fill((10, 10, 12))
+    for x in range(0, surface.get_width(), 30):
+        pygame.draw.line(bg, (18, 18, 20), (x, 0), (x, surface.get_height()), 1)
+    for y in range(0, surface.get_height(), 30):
+        pygame.draw.line(bg, (18, 18, 20), (0, y), (surface.get_width(), y), 1)
+    surface.blit(bg, (0, 0))
+
+    gate_rect = pygame.Rect(surface.get_width() // 2 - 170, 220, 340, 180)
+    panel_rect = pygame.Rect(80, 160, surface.get_width() - 160, 320)
+    pygame.draw.rect(surface, (22, 22, 28), panel_rect, border_radius=18)
+    pygame.draw.rect(surface, gate_color, panel_rect, 4, border_radius=18)
+
+    wire_on = (0, 210, 0)
+    wire_off = (120, 35, 35)
+    wire1 = wire_on if input1 else wire_off
+    wire2 = wire_on if input2 else wire_off
+    wire_out = wire_on if output else wire_off
+
+    btn1 = pygame.Rect(120, 215, 54, 54)
+    btn2 = pygame.Rect(120, 335, 54, 54)
+    lamp = pygame.Rect(surface.get_width() - 160, 260, 44, 80)
+
+    pygame.draw.line(surface, wire1, (btn1.right, btn1.centery), (gate_rect.left, gate_rect.top + 42), 5)
+    pygame.draw.line(surface, wire2, (btn2.right, btn2.centery), (gate_rect.left, gate_rect.bottom - 42), 5)
+    pygame.draw.line(surface, wire_out, (gate_rect.right, gate_rect.centery), (lamp.left, lamp.centery), 5)
+
+    pygame.draw.circle(surface, wire1, btn1.center, 25)
+    pygame.draw.circle(surface, wire2, btn2.center, 25)
+    pygame.draw.circle(surface, (255, 255, 255), btn1.center, 25, 2)
+    pygame.draw.circle(surface, (255, 255, 255), btn2.center, 25, 2)
+    font_btn = pygame.font.Font(None, 28)
+    value1 = font_btn.render(str(input1), True, (255, 255, 255))
+    value2 = font_btn.render(str(input2), True, (255, 255, 255))
+    surface.blit(value1, value1.get_rect(center=btn1.center))
+    surface.blit(value2, value2.get_rect(center=btn2.center))
+
+    body_color = (242, 242, 242)
+    outline = (8, 8, 8)
+    left = gate_rect.left
+    top = gate_rect.top
+    bottom = gate_rect.bottom
+    right = gate_rect.right
+    mid_y = gate_rect.centery
+    mid_x = gate_rect.centerx
+
+    if gate_name in {"AND", "NAND"}:
+        body = pygame.Rect(left + 10, top + 18, gate_rect.width - 20, gate_rect.height - 36)
+        pygame.draw.rect(surface, body_color, (left + 10, top + 18, gate_rect.width // 2, gate_rect.height - 36))
+        pygame.draw.arc(surface, body_color, body, math.radians(270), math.radians(90), 6)
+        pygame.draw.line(surface, body_color, (left + 10, top + 18), (mid_x, top + 18), 6)
+        pygame.draw.line(surface, body_color, (left + 10, bottom - 18), (mid_x, bottom - 18), 6)
+        pygame.draw.line(surface, body_color, (left + 10, top + 18), (left + 10, bottom - 18), 6)
+    else:
+        points = [
+            (left + 14, top + 18),
+            (mid_x - 30, top + 26),
+            (right - 26, mid_y),
+            (mid_x - 30, bottom - 26),
+            (left + 14, bottom - 18),
+            (left + 42, mid_y),
+        ]
+        pygame.draw.polygon(surface, body_color, points)
+        pygame.draw.aalines(surface, outline, True, points)
+
+    if gate_name in {"XOR", "XNOR"}:
+        extra = [(px - 14, py) for px, py in [
+            (left + 14, top + 18),
+            (mid_x - 30, top + 26),
+            (right - 26, mid_y),
+            (mid_x - 30, bottom - 26),
+            (left + 14, bottom - 18),
+            (left + 42, mid_y),
+        ]]
+        pygame.draw.aalines(surface, outline, True, extra)
+
+    if gate_name in {"NOR", "XNOR", "NAND"}:
+        pygame.draw.circle(surface, outline, (right + 16, mid_y), 8, 3)
+
+    pygame.draw.line(surface, body_color, (right, mid_y), (right + 42, mid_y), 6)
+    pygame.draw.rect(surface, outline, gate_rect.inflate(10, 10), 4, border_radius=18)
+
+    pulse = (math.sin(pygame.time.get_ticks() / 140.0) + 1.0) / 2.0 if show_ok else 0.0
+    if output:
+        glow = pygame.Surface((120, 120), pygame.SRCALPHA)
+        glow_alpha = 60 + int(70 * pulse)
+        glow_radius = 28 + int(8 * pulse)
+        pygame.draw.circle(glow, (255, 220, 70, glow_alpha), (60, 60), glow_radius)
+        surface.blit(glow, (lamp.centerx - 60, lamp.centery - 60))
+    lamp_color = (255, 220, 70) if output else (85, 85, 85)
+    if show_ok:
+        lamp_color = (255, 235, 110) if pulse > 0.5 else (255, 215, 55)
+    pygame.draw.circle(surface, lamp_color, lamp.center, 20)
+    pygame.draw.circle(surface, (255, 255, 255), lamp.center, 20, 2)
+    base = pygame.Rect(lamp.centerx - 12, lamp.bottom - 6, 24, 16)
+    pygame.draw.rect(surface, (110, 110, 110), base)
+    pygame.draw.rect(surface, (255, 255, 255), base, 2)
+
+    if show_ok:
+        ok_font = pygame.font.Font(None, 30)
+        ok_text = ok_font.render("OK", True, (0, 210, 0))
+        ok_bg = pygame.Rect(lamp.centerx - 28, lamp.top - 38, 56, 26)
+        pygame.draw.rect(surface, (255, 255, 255), ok_bg, border_radius=8)
+        surface.blit(ok_text, ok_text.get_rect(center=ok_bg.center))
+
+    font_big = pygame.font.Font(None, 58)
+    font_small = pygame.font.Font(None, 30)
+    title = font_big.render(gate_name, True, gate_color)
+    surface.blit(title, title.get_rect(center=(surface.get_width() // 2, 70)))
+    subtitle = font_small.render("Pressione ENTER ou ESC para voltar", True, (255, 255, 255))
+    surface.blit(subtitle, subtitle.get_rect(center=(surface.get_width() // 2, surface.get_height() - 42)))
 
 
 def animate_phase_transition(screen, clock, player_animator, start_pos, from_phase, to_phase):
@@ -503,8 +588,9 @@ def show_portal_phase(screen, clock, phase_label, gates_info, player_animator, p
             )
             if player_rect.colliderect(gate_trigger):
                 if not gate.get("done"):
-                    show_gate_explanation(screen, clock, gate["name"], gate["color"])
-                    gates_info[i]["done"] = True
+                    solved = show_gate_explanation(screen, clock, gate["name"], gate["color"])
+                    if solved:
+                        gates_info[i]["done"] = True
                 player_pos = [gate["rect"].centerx, gate["rect"].bottom + 100]
                 break
 
@@ -514,22 +600,7 @@ def show_portal_phase(screen, clock, phase_label, gates_info, player_animator, p
         screen.blit(title, title.get_rect(center=(screen.get_width() // 2, 20)))
 
         for gate in gates_info:
-            pygame.draw.rect(screen, gate["color"], gate["rect"], border_radius=12)
-            pygame.draw.rect(screen, pure_white, gate["rect"], 3, border_radius=12)
-
-            name_text = font_small.render(gate["name"], True, pure_black)
-            screen.blit(name_text, name_text.get_rect(center=(gate["rect"].centerx, gate["rect"].centery - 30)))
-
-            if gate.get("done"):
-                pad = 5
-                ok_text = font_small.render("OK", True, (0, 200, 0))
-                ok_w, ok_h = ok_text.get_width(), ok_text.get_height()
-                ok_bg_w, ok_bg_h = ok_w + pad * 2, ok_h + pad * 2
-                ok_bg_x = gate["rect"].right - ok_bg_w - 8
-                ok_bg_y = gate["rect"].top + 8
-                ok_bg = pygame.Rect(ok_bg_x, ok_bg_y, ok_bg_w, ok_bg_h)
-                pygame.draw.rect(screen, pure_white, ok_bg, border_radius=6)
-                screen.blit(ok_text, (ok_bg.x + pad, ok_bg.y + pad))
+            draw_gate_icon(screen, gate["name"], gate["rect"], gate["color"], gate.get("done", False))
 
         player_img = player_animator.get_current_image()
         if player_img:
