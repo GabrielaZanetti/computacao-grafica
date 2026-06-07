@@ -238,12 +238,36 @@ def show_gate_explanation(screen, clock, gate_name, gate_color):
     dark_gray = (40, 40, 40)
 
     descriptions = {
-        "AND": ("Porta E (AND)", "Saída = 1 apenas se AMBAS as entradas são 1"),
-        "OR": ("Porta OU (OR)", "Saída = 1 se PELO MENOS UMA entrada é 1"),
-        "NOR": ("Porta NOR", "Saída = 1 apenas se NENHUMA entrada é 1"),
-        "XOR": ("Porta XOR", "Saída = 1 se APENAS UMA entrada é 1"),
-        "XNOR": ("Porta XNOR", "Saída = 1 se as DUAS entradas forem iguais"),
-        "NAND": ("Porta NAND", "Saída = 0 apenas se AMBAS as entradas são 1"),
+        "AND": (
+            "Porta E (AND)",
+            "x AND x = x",
+            "A porta AND so libera saida 1 quando as duas entradas estao em 1 ao mesmo tempo.",
+        ),
+        "OR": (
+            "Porta OU (OR)",
+            "x OR x = x",
+            "A porta OR libera saida 1 quando pelo menos uma das entradas esta em 1.",
+        ),
+        "NOR": (
+            "Porta NOR",
+            "x NOR x = 0",
+            "A porta NOR so libera saida 1 quando nenhuma entrada esta em 1.",
+        ),
+        "XOR": (
+            "Porta XOR",
+            "x XOR x = 0",
+            "A porta XOR libera saida 1 apenas quando as entradas sao diferentes.",
+        ),
+        "XNOR": (
+            "Porta XNOR",
+            "x XNOR x = 1",
+            "A porta XNOR libera saida 1 quando as duas entradas sao iguais.",
+        ),
+        "NAND": (
+            "Porta NAND",
+            "x NAND x = 1",
+            "A porta NAND libera saida 0 somente quando as duas entradas estao em 1.",
+        ),
     }
 
     input1 = 0
@@ -258,7 +282,7 @@ def show_gate_explanation(screen, clock, gate_name, gate_color):
     # Lâmpada
     lamp_rect = pygame.Rect(820, 260, 44, 80)
 
-    gate_title, gate_desc = descriptions[gate_name]
+    gate_title, gate_formula, gate_expl = descriptions[gate_name]
 
     running = True
     while running:
@@ -295,6 +319,13 @@ def show_gate_explanation(screen, clock, gate_name, gate_color):
 
         screen.fill(pure_black)
         draw_gate_explanation_scene(screen, gate_name, gate_color, input1, input2, output, completed)
+
+        title_text = font_big.render(gate_title, True, gate_color)
+        formula_text = font_small.render(gate_formula, True, pure_white)
+        expl_text = font_tiny.render(gate_expl, True, pure_white)
+        screen.blit(title_text, title_text.get_rect(center=(screen.get_width() // 2, 62)))
+        screen.blit(formula_text, formula_text.get_rect(center=(screen.get_width() // 2, 112)))
+        screen.blit(expl_text, expl_text.get_rect(center=(screen.get_width() // 2, 148)))
 
         # Operação e instrução
         if gate_name == "AND":
@@ -494,10 +525,7 @@ def draw_gate_explanation_scene(surface, gate_name, gate_color, input1, input2, 
         pygame.draw.rect(surface, (255, 255, 255), ok_bg, border_radius=8)
         surface.blit(ok_text, ok_text.get_rect(center=ok_bg.center))
 
-    font_big = pygame.font.Font(None, 58)
     font_small = pygame.font.Font(None, 30)
-    title = font_big.render(gate_name, True, gate_color)
-    surface.blit(title, title.get_rect(center=(surface.get_width() // 2, 70)))
     subtitle = font_small.render("Pressione ENTER ou ESC para voltar", True, (255, 255, 255))
     surface.blit(subtitle, subtitle.get_rect(center=(surface.get_width() // 2, surface.get_height() - 42)))
 
