@@ -251,7 +251,13 @@ def show_portal_map(screen, clock):
         
         # Verifica colisão com as portas
         for i, gate in enumerate(gates_info):
-            if player_rect.colliderect(gate["rect"]):
+            gate_trigger = pygame.Rect(
+                gate["rect"].x + 8,
+                gate["rect"].y,
+                gate["rect"].width - 16,
+                max(36, gate["rect"].height // 5),
+            )
+            if player_rect.colliderect(gate_trigger):
                 # Só entra se a porta ainda não estiver concluída
                 if not gate.get("done"):
                     show_gate_explanation(screen, clock, gate["name"], gate["color"])
